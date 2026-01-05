@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Impact Map | Dashboard</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #e2e8f0;
+    overflow: hidden;
+    height: 100vh;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+/* ========== SIDEBAR ========== */
+.sidebar {
+    width: 350px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-icon {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.logo-text {
+    font-size: 19px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sidebar-content {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.section-title i {
+    color: #3b82f6;
+    font-size: 12px;
+}
+
+/* Filter Cards - SMALLER VERSION */
+.filter-card {
+    background: rgba(30, 41, 59, 0.7);
+    border-radius: 8px;
+    padding: 10px; /* Reduced from 15px */
+    margin-bottom: 8px; /* Reduced from 12px */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.filter-card:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.filter-label {
+    display: block;
+    font-size: 11px; /* Reduced from 12px */
+    font-weight: 500;
+    margin-bottom: 4px; /* Reduced from 6px */
+    color: #cbd5e1;
+}
+
+/* Custom Dropdown - SMALLER */
+.dropdown-container {
+    position: relative;
+    margin-bottom: 8px; /* Reduced from 12px */
+}
+
+.dropdown-header {
+    width: 100%;
+    padding: 8px 12px; /* Reduced from 10px 14px */
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px; /* Reduced from 8px */
+    color: #e2e8f0;
+    font-size: 12px; /* Reduced from 13px */
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+.dropdown-header:hover {
+    border-color: #3b82f6;
+}
+
+.dropdown-header i {
+    color: #94a3b8;
+    font-size: 10px; /* Reduced from 11px */
+    transition: transform 0.3s;
+}
+
+.dropdown-header.open i {
+    transform: rotate(180deg);
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 6px; /* Reduced from 8px */
+    margin-top: 3px; /* Reduced from 4px */
+    padding: 8px; /* Reduced from 10px */
+    z-index: 1000;
+    display: none;
+    max-height: 180px; /* Reduced from 200px */
+    overflow-y: auto;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Reduced from 0 10px 25px */
+}
+
+.dropdown-content.show {
+    display: block;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    padding: 5px 0; /* Reduced from 6px 0 */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-item:last-child {
+    border-bottom: none;
+}
+
+.checkbox-item input[type="checkbox"] {
+    margin-right: 6px; /* Reduced from 8px */
+    cursor: pointer;
+    width: 13px; /* Reduced from 14px */
+    height: 13px; /* Reduced from 14px */
+}
+
+.checkbox-item label {
+    cursor: pointer;
+    flex: 1;
+    font-size: 11px; /* Reduced from 12px */
+    color: #cbd5e1;
+}
+
+.checkbox-controls {
+    display: flex;
+    gap: 5px; /* Reduced from 6px */
+    margin-top: 8px; /* Reduced from 10px */
+    padding-top: 8px; /* Reduced from 10px */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.checkbox-controls button {
+    flex: 1;
+    padding: 5px 8px; /* Reduced from 6px 10px */
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 5px; /* Reduced from 6px */
+    color: #cbd5e1;
+    font-size: 10px; /* Reduced from 11px */
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.checkbox-controls button:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+/* Range Inputs - SMALLER */
+.range-container {
+    display: flex;
+    gap: 8px; /* Reduced from 10px */
+    margin-bottom: 8px; /* Reduced from 12px */
+}
+
+.range-input {
+    flex: 1;
+    position: relative;
+}
+
+.range-input i {
+    position: absolute;
+    left: 8px; /* Reduced from 10px */
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 11px; /* Reduced from 12px */
+}
+
+.range-input input {
+    width: 100%;
+    padding: 8px 10px 8px 25px; /* Reduced from 10px 12px 10px 30px */
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px; /* Reduced from 8px */
+    color: #e2e8f0;
+    font-size: 12px; /* Reduced from 13px */
+    transition: all 0.2s ease;
+}
+
+.range-input input:hover,
+.range-input input:focus {
+    border-color: #3b82f6;
+    outline: none;
+}
+
+/* Buttons - SLIGHTLY BIGGER */
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 12px;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 0;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-secondary {
+    background: rgba(30, 41, 59, 0.8);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+/* Stats Cards - SLIGHTLY BIGGER */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.stat-card {
+    background: rgba(30, 41, 59, 0.7);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    min-height: 52px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.stat-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #3b82f6;
+    margin-bottom: 2px;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.stat-label {
+    font-size: 10px;
+    color: #94a3b8;
+    line-height: 1.2;
+}
+
+/* ========== MAP ========== */
+.map-container {
+    flex: 1;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Graph Panel at Bottom */
+.graph-panel {
+    position: fixed;
+    bottom: 0;
+    left: 350px;
+    right: 0;
+    height: 170px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.graph-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.graph-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.graph-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.graph-btn {
+    padding: 5px 10px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.graph-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.graph-container {
+    flex: 1;
+    position: relative;
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 8px;
+    padding: 8px;
+    overflow: hidden;
+}
+
+#statsChart {
+    width: 100%;
+    height: 100%;
+}
+
+.graph-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.graph-placeholder i {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+/* Map Controls - SINGLE ZOOM BUTTON */
+.map-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.control-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 15px;
+}
+
+.control-btn:hover {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-2px);
+}
+
+/* Single Zoom Button Style */
+.zoom-combined-btn {
+    width: 38px;
+    height: 74px; /* Double height for both buttons */
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.zoom-combined-btn:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+}
+
+.zoom-btn-half {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+    color: #e2e8f0;
+    font-size: 16px;
+}
+
+.zoom-btn-half:hover {
+    background: rgba(30, 41, 59, 0.9);
+    color: #3b82f6;
+}
+
+.zoom-btn-half:first-child {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 8px;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 330px;
+    }
+    
+    .graph-panel {
+        left: 330px;
+        height: 160px;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+    }
+    
+    .map-container {
+        height: 50vh;
+    }
+    
+    .graph-panel {
+        left: 0;
+        height: 150px;
+    }
+    
+    .stats-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .zoom-combined-btn {
+        height: 70px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar-content {
+        padding: 15px;
+    }
+    
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    
+    .stat-card {
+        padding: 7px;
+        min-height: 48px;
+    }
+    
+    .stat-value {
+        font-size: 13px;
+    }
+    
+    .stat-label {
+        font-size: 9px;
+    }
+    
+    .graph-panel {
+        height: 140px;
+        padding: 10px;
+    }
+    
+    .graph-container {
+        padding: 6px;
+    }
+    
+    .btn {
+        padding: 9px 12px;
+        font-size: 12px;
+    }
+    
+    .zoom-combined-btn {
+        width: 36px;
+        height: 66px;
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="app-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-globe-europe"></i>
+                </div>
+                <div class="logo-text">Client Impact Map</div>
+            </div>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- Filters Section - SLIGHTLY BIGGER -->
+            <div class="filter-card">
+                <h3 class="section-title">
+                    <i class="fas fa-filter"></i> Filter Clients
+                </h3>
+                
+                <!-- Business Sector Dropdown -->
+                <div class="dropdown-container">
+                    <div class="dropdown-header" id="sectorDropdownHeader">
+                        <span>Business Sector</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="dropdown-content" id="sectorDropdown">
+                        <div id="sectorCheckboxes"></div>
+                        <div class="checkbox-controls">
+                            <button onclick="selectAll('sector')">Select All</button>
+                            <button onclick="clearAll('sector')">Clear All</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Client Zone Dropdown -->
+                <div class="dropdown-container">
+                    <div class="dropdown-header" id="zoneDropdownHeader">
+                        <span>Client Zone</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="dropdown-content" id="zoneDropdown">
+                        <div id="zoneCheckboxes"></div>
+                        <div class="checkbox-controls">
+                            <button onclick="selectAll('zone')">Select All</button>
+                            <button onclick="clearAll('zone')">Clear All</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Client Value Dropdown -->
+                <div class="dropdown-container">
+                    <div class="dropdown-header" id="valueDropdownHeader">
+                        <span>Client Value</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="dropdown-content" id="valueDropdown">
+                        <div id="valueCheckboxes"></div>
+                        <div class="checkbox-controls">
+                            <button onclick="selectAll('value')">Select All</button>
+                            <button onclick="clearAll('value')">Clear All</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sales Impact Range -->
+                <div class="range-container">
+                    <div class="range-input">
+                        <i class="fas fa-euro-sign"></i>
+                        <input type="number" id="minImpact" placeholder="Min Impact">
+                    </div>
+                    <div class="range-input">
+                        <i class="fas fa-euro-sign"></i>
+                        <input type="number" id="maxImpact" placeholder="Max Impact">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Section - SLIGHTLY BIGGER -->
+            <div class="filter-card">
+                <h3 class="section-title">
+                    <i class="fas fa-chart-line"></i> Quick Stats
+                </h3>
+                
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalClients">0</div>
+                        <div class="stat-label">Total Clients</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalRevenue">€0</div>
+                        <div class="stat-label">Total Revenue</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgRevenue">€0</div>
+                        <div class="stat-label">Avg. Revenue</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="activeSectors">0</div>
+                        <div class="stat-label">Active Sectors</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons - SLIGHTLY BIGGER -->
+            <div class="sidebar-footer">
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="resetFilters()">
+                        <i class="fas fa-redo"></i> Reset Filters
+                    </button>
+                    <button class="btn btn-primary" onclick="exportCSV()">
+                        <i class="fas fa-download"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Container -->
+    <div class="map-container">
+        <div id="map"></div>
+        
+        <!-- Map Controls - SINGLE ZOOM BUTTON -->
+        <div class="map-controls">
+            <!-- Single Zoom Button (Combined + and -) -->
+            <div class="zoom-combined-btn">
+                <button class="zoom-btn-half" onclick="map.zoomIn()" title="Zoom In">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="zoom-btn-half" onclick="map.zoomOut()" title="Zoom Out">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+            
+            <div class="control-btn" onclick="resetView()" title="Reset View">
+                <i class="fas fa-crosshairs"></i>
+            </div>
+            <div class="control-btn" onclick="resetZoom()" title="Reset Zoom Level">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">
+                <i class="fas fa-expand"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graph Panel at Bottom -->
+<div class="graph-panel" id="graphPanel">
+    <div class="graph-header">
+        <div class="graph-title">
+            <i class="fas fa-chart-bar"></i> Revenue by Business Sector
+        </div>
+        <div class="graph-controls">
+            <button class="graph-btn" onclick="toggleGraphPanel()">
+                <i class="fas fa-chevron-down" id="graphToggleIcon"></i> Hide
+            </button>
+            <button class="graph-btn" onclick="refreshGraph()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+    
+    <div class="graph-container">
+        <canvas id="statsChart"></canvas>
+        <div class="graph-placeholder" id="graphPlaceholder">
+            <i class="fas fa-chart-bar"></i>
+            <div>Loading statistics graph...</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Initialize variables
+let map;
+let currentView;
+let currentZoom;
+
+function initializeMap() {
+    map = L.map('map').setView([46.6, 1.88], 6);
+    currentView = [46.6, 1.88];
+    currentZoom = 6;
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom: 19}).addTo(map);
+    
+    // Save current view whenever map view changes
+    map.on('moveend', function() {
+        currentView = map.getCenter();
+        currentZoom = map.getZoom();
+    });
+    
+    // Also save on zoom
+    map.on('zoomend', function() {
+        currentZoom = map.getZoom();
+    });
+}
+
+initializeMap();
+
+let geoData;
+let geoLayer;
+let staticSectors = [], staticZones = [], staticValues = [];
+let statsChart = null;
+
+// Store selected values
+let selectedSectors = new Set();
+let selectedZones = new Set();
+let selectedValues = new Set();
+
+// Store statistics data for graph
+let graphData = {
+    sectors: [],
+    revenues: [],
+    clientCounts: []
+};
+
+/* ---------- GRAPH PANEL FUNCTIONS ---------- */
+function toggleGraphPanel() {
+    const panel = document.getElementById('graphPanel');
+    const icon = document.getElementById('graphToggleIcon');
+    
+    if (panel.style.height === '45px') {
+        panel.style.height = '170px';
+        icon.className = 'fas fa-chevron-down';
+        panel.querySelector('.graph-btn').innerHTML = '<i class="fas fa-chevron-down"></i> Hide';
+        if (statsChart) {
+            setTimeout(() => statsChart.resize(), 300);
+        }
+    } else {
+        panel.style.height = '45px';
+        icon.className = 'fas fa-chevron-up';
+        panel.querySelector('.graph-btn').innerHTML = '<i class="fas fa-chevron-up"></i> Show';
+    }
+}
+
+function refreshGraph() {
+    updateStatsGraph();
+}
+
+/* ---------- MAP CONTROLS ---------- */
+function resetView() {
+    map.setView([46.6, 1.88], 6);
+    currentView = [46.6, 1.88];
+    currentZoom = 6;
+}
+
+function resetZoom() {
+    // Reset to CURRENT zoom level (not original zoom)
+    if (currentView && currentZoom !== undefined) {
+        map.setView(currentView, currentZoom);
+    }
+}
+
+function toggleFullscreen() {
+    const elem = document.documentElement;
+    if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) {
+            elem.msRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+    }
+}
+
+/* ---------- DROPDOWN TOGGLE ---------- */
+function setupDropdowns() {
+    // Sector dropdown
+    document.getElementById('sectorDropdownHeader').addEventListener('click', function(e) {
+        e.stopPropagation();
+        const dropdown = document.getElementById('sectorDropdown');
+        const isOpen = dropdown.classList.contains('show');
+        
+        // Close all other dropdowns
+        document.querySelectorAll('.dropdown-content').forEach(d => {
+            if (d.id !== 'sectorDropdown') {
+                d.classList.remove('show');
+            }
+        });
+        
+        document.querySelectorAll('.dropdown-header').forEach(h => {
+            if (!h.isEqualNode(this)) {
+                h.classList.remove('open');
+            }
+        });
+        
+        if (!isOpen) {
+            dropdown.classList.add('show');
+            this.classList.add('open');
+        } else {
+            dropdown.classList.remove('show');
+            this.classList.remove('open');
+        }
+    });
+    
+    // Zone dropdown
+    document.getElementById('zoneDropdownHeader').addEventListener('click', function(e) {
+        e.stopPropagation();
+        const dropdown = document.getElementById('zoneDropdown');
+        const isOpen = dropdown.classList.contains('show');
+        
+        // Close all other dropdowns
+        document.querySelectorAll('.dropdown-content').forEach(d => {
+            if (d.id !== 'zoneDropdown') {
+                d.classList.remove('show');
+            }
+        });
+        
+        document.querySelectorAll('.dropdown-header').forEach(h => {
+            if (!h.isEqualNode(this)) {
+                h.classList.remove('open');
+            }
+        });
+        
+        if (!isOpen) {
+            dropdown.classList.add('show');
+            this.classList.add('open');
+        } else {
+            dropdown.classList.remove('show');
+            this.classList.remove('open');
+        }
+    });
+    
+    // Value dropdown
+    document.getElementById('valueDropdownHeader').addEventListener('click', function(e) {
+        e.stopPropagation();
+        const dropdown = document.getElementById('valueDropdown');
+        const isOpen = dropdown.classList.contains('show');
+        
+        // Close all other dropdowns
+        document.querySelectorAll('.dropdown-content').forEach(d => {
+            if (d.id !== 'valueDropdown') {
+                d.classList.remove('show');
+            }
+        });
+        
+        document.querySelectorAll('.dropdown-header').forEach(h => {
+            if (!h.isEqualNode(this)) {
+                h.classList.remove('open');
+            }
+        });
+        
+        if (!isOpen) {
+            dropdown.classList.add('show');
+            this.classList.add('open');
+        } else {
+            dropdown.classList.remove('show');
+            this.classList.remove('open');
+        }
+    });
+    
+    // Prevent dropdown from closing when clicking inside
+    document.querySelectorAll('.dropdown-content').forEach(dropdown => {
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+    
+    // Close dropdowns when clicking outside (except on checkboxes)
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown-container')) {
+            document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+            document.querySelectorAll('.dropdown-header').forEach(h => h.classList.remove('open'));
+        }
+    });
+}
+
+/* ---------- PROPERTY NAME FIXES ---------- */
+function getProperty(p, possibleKeys) {
+    for (let key of possibleKeys) {
+        if (p[key] !== null && p[key] !== undefined && p[key] !== "" && p[key] !== " ") {
+            return p[key];
+        }
+    }
+    return null;
+}
+
+function normalizeClientValue(v) {
+    if (!v) return "N/A";
+    v = v.toString().toLowerCase();
+    if (v.includes("high")) return "High";
+    if (v.includes("medium")) return "Medium";
+    if (v.includes("low")) return "Low";
+    return "N/A";
+}
+
+function cleanName(name) {
+    if (!name) return null;
+    return name.toString()
+        .replace(/\u00A0/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+function sectorColor(name) {
+    if (!name || name === "N/A") return "#64748b";
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return `hsl(${hash % 360}, 70%, 55%)`;
+}
+
+function zoneColor(zone) {
+    if (!zone || zone === "N/A") return "#64748b";
+    zone = zone.toLowerCase();
+    if (zone.includes("france") || zone.includes("french")) return "#2563eb";
+    if (zone.includes("international")) return "#f97316";
+    return "#64748b";
+}
+
+function clientValueColor(val) {
+    if (val === "High") return "#dc2626";
+    if (val === "Medium") return "#f59e0b";
+    if (val === "Low") return "#16a34a";
+    return "#64748b";
+}
+
+/* ---------- CHECKBOX FUNCTIONS ---------- */
+function createCheckbox(containerId, items, type) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    
+    items.forEach(item => {
+        if (item && item !== "N/A") {
+            const div = document.createElement('div');
+            div.className = 'checkbox-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `${type}_${item}`;
+            checkbox.value = item;
+            checkbox.checked = true; // Default all selected
+            
+            // Store in appropriate set
+            if (type === 'sector') selectedSectors.add(item);
+            else if (type === 'zone') selectedZones.add(item);
+            else if (type === 'value') selectedValues.add(item);
+            
+            checkbox.addEventListener('change', function(e) {
+                e.stopPropagation(); // Prevent dropdown from closing
+                
+                if (this.checked) {
+                    if (type === 'sector') selectedSectors.add(item);
+                    else if (type === 'zone') selectedZones.add(item);
+                    else if (type === 'value') selectedValues.add(item);
+                } else {
+                    if (type === 'sector') selectedSectors.delete(item);
+                    else if (type === 'zone') selectedZones.delete(item);
+                    else if (type === 'value') selectedValues.delete(item);
+                }
+                updateDropdownHeader(type);
+                applyFilters();
+            });
+            
+            const label = document.createElement('label');
+            label.htmlFor = `${type}_${item}`;
+            label.textContent = item;
+            label.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent dropdown from closing
+            });
+            
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            container.appendChild(div);
+        }
+    });
+}
+
+function updateDropdownHeader(type) {
+    let selectedCount, totalCount, headerElement;
+    
+    if (type === 'sector') {
+        selectedCount = selectedSectors.size;
+        totalCount = staticSectors.length;
+        headerElement = document.getElementById('sectorDropdownHeader').querySelector('span');
+    } else if (type === 'zone') {
+        selectedCount = selectedZones.size;
+        totalCount = staticZones.length;
+        headerElement = document.getElementById('zoneDropdownHeader').querySelector('span');
+    } else if (type === 'value') {
+        selectedCount = selectedValues.size;
+        totalCount = staticValues.length;
+        headerElement = document.getElementById('valueDropdownHeader').querySelector('span');
+    }
+    
+    if (selectedCount === totalCount) {
+        headerElement.textContent = type === 'sector' ? 'All Business Sectors' : 
+                                  type === 'zone' ? 'All Client Zones' : 'All Client Values';
+    } else {
+        headerElement.textContent = `${type === 'sector' ? 'Business Sector' : 
+                                   type === 'zone' ? 'Client Zone' : 'Client Value'} (${selectedCount} selected)`;
+    }
+}
+
+function selectAll(type) {
+    let items;
+    
+    if (type === 'sector') {
+        items = staticSectors;
+        selectedSectors.clear();
+        staticSectors.forEach(item => selectedSectors.add(item));
+    } else if (type === 'zone') {
+        items = staticZones;
+        selectedZones.clear();
+        staticZones.forEach(item => selectedZones.add(item));
+    } else if (type === 'value') {
+        items = staticValues;
+        selectedValues.clear();
+        staticValues.forEach(item => selectedValues.add(item));
+    }
+    
+    // Update checkboxes
+    items.forEach(item => {
+        if (item && item !== "N/A") {
+            const checkbox = document.getElementById(`${type}_${item}`);
+            if (checkbox) checkbox.checked = true;
+        }
+    });
+    
+    updateDropdownHeader(type);
+    applyFilters();
+}
+
+function clearAll(type) {
+    let items;
+    
+    if (type === 'sector') {
+        items = staticSectors;
+        selectedSectors.clear();
+    } else if (type === 'zone') {
+        items = staticZones;
+        selectedZones.clear();
+    } else if (type === 'value') {
+        items = staticValues;
+        selectedValues.clear();
+    }
+    
+    // Update checkboxes
+    items.forEach(item => {
+        if (item && item !== "N/A") {
+            const checkbox = document.getElementById(`${type}_${item}`);
+            if (checkbox) checkbox.checked = false;
+        }
+    });
+    
+    updateDropdownHeader(type);
+    applyFilters();
+}
+
+/* ---------- STATISTICS & GRAPH ---------- */
+function updateStats(data) {
+    const clientEntries = new Map();
+    const sectorRevenues = new Map();
+    const sectorClientCounts = new Map();
+    
+    // Step 1: Collect all entries
+    data.features.forEach((f, index) => {
+        const p = f.properties;
+        const salesImpact = parseFloat(p["Sales_Impact_Clean"]) || 0;
+        const sector = getProperty(p, ["Business Sector", "Business_Sector", "Sector"]) || "Unknown";
+        
+        // Track sector revenues and client counts for graph
+        if (!sectorRevenues.has(sector)) {
+            sectorRevenues.set(sector, 0);
+            sectorClientCounts.set(sector, 0);
+        }
+        sectorRevenues.set(sector, sectorRevenues.get(sector) + salesImpact);
+        sectorClientCounts.set(sector, sectorClientCounts.get(sector) + 1);
+        
+        // Try to find client name
+        let clientName = null;
+        const nameColumns = [
+            "Nom_du_contact",
+            "Nom du contact", 
+            "Nom_de_la_boutique", 
+            "Nom de la boutique",
+            "Name",
+            "Nom",
+            "Client Name"
+        ];
+        
+        for (let col of nameColumns) {
+            if (p[col] && p[col].toString().trim() !== "") {
+                clientName = cleanName(p[col]);
+                break;
+            }
+        }
+        
+        if (!clientName) {
+            const addressCols = ["Full Address", "Full_Address", "Address", "Adresse"];
+            for (let col of addressCols) {
+                if (p[col] && p[col].toString().trim() !== "") {
+                    clientName = cleanName(p[col]);
+                    break;
+                }
+            }
+        }
+        
+        if (!clientName) {
+            const uniqueId = [
+                p["Adresse 1"],
+                p["Ville"],
+                p["Code_postal"],
+                p["Pays"]
+            ].filter(Boolean).join("|");
+            
+            if (uniqueId !== "") {
+                clientName = cleanName(uniqueId);
+            } else {
+                clientName = `client_${index}`;
+            }
+        }
+        
+        if (!clientEntries.has(clientName)) {
+            clientEntries.set(clientName, []);
+        }
+        clientEntries.get(clientName).push({
+            salesImpact: salesImpact,
+            index: index,
+            properties: p
+        });
+    });
+
+    // Step 2: Calculate totals
+    const totalClients = clientEntries.size;
+    let totalRevenue = 0;
+    let totalEntries = 0;
+    const sectors = new Set();
+    
+    clientEntries.forEach((entries) => {
+        entries.forEach(entry => {
+            totalRevenue += entry.salesImpact;
+            totalEntries++;
+            const sector = getProperty(entry.properties, ["Business Sector", "Business_Sector", "Sector"]);
+            if (sector) sectors.add(sector);
+        });
+    });
+
+    const avgRevenue = totalClients > 0 ? (totalRevenue / totalClients) : 0;
+
+    document.getElementById('totalClients').textContent = totalClients;
+    document.getElementById('totalRevenue').textContent = '€' + Math.round(totalRevenue).toLocaleString();
+    document.getElementById('avgRevenue').textContent = '€' + Math.round(avgRevenue).toLocaleString();
+    document.getElementById('activeSectors').textContent = sectors.size;
+    
+    // Prepare data for graph
+    prepareGraphData(sectorRevenues, sectorClientCounts);
+}
+
+function prepareGraphData(sectorRevenues, sectorClientCounts) {
+    // Convert maps to arrays and sort by revenue
+    const sectorsArray = Array.from(sectorRevenues.entries())
+        .filter(([sector]) => sector !== "Unknown" && sector !== "N/A")
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8); // Top 8 sectors for better visualization
+    
+    graphData.sectors = sectorsArray.map(([sector]) => sector);
+    graphData.revenues = sectorsArray.map(([, revenue]) => revenue);
+    graphData.clientCounts = sectorsArray.map(([sector]) => sectorClientCounts.get(sector) || 0);
+    
+    // Update the graph
+    updateStatsGraph();
+}
+
+function updateStatsGraph() {
+    const ctx = document.getElementById('statsChart').getContext('2d');
+    const placeholder = document.getElementById('graphPlaceholder');
+    
+    if (graphData.sectors.length === 0) {
+        placeholder.style.display = 'flex';
+        if (statsChart) {
+            statsChart.destroy();
+            statsChart = null;
+        }
+        return;
+    }
+    
+    placeholder.style.display = 'none';
+    
+    // Destroy existing chart if it exists
+    if (statsChart) {
+        statsChart.destroy();
+    }
+    
+    // Generate colors for each sector
+    const backgroundColors = graphData.sectors.map(sector => sectorColor(sector));
+    
+    // Create chart
+    statsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: graphData.sectors,
+            datasets: [
+                {
+                    label: 'Revenue (€)',
+                    data: graphData.revenues,
+                    backgroundColor: backgroundColors,
+                    borderColor: backgroundColors.map(color => color.replace('0.8)', '1)')),
+                    borderWidth: 1,
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#e2e8f0',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleColor: '#e2e8f0',
+                    bodyColor: '#cbd5e1',
+                    borderColor: '#3b82f6',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return `Revenue: €${Math.round(context.parsed.y).toLocaleString()}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: {
+                            size: 11
+                        },
+                        maxRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: function(value) {
+                            return '€' + Math.round(value).toLocaleString();
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+}
+
+/* ---------- MARKERS - SMALLER POINTS ---------- */
+function drawMarkers(data) {
+    if (geoLayer) map.removeLayer(geoLayer);
+    
+    const filteredFeatures = data.features.filter(f => {
+        const p = f.properties;
+        const sector = getProperty(p, ["Business Sector", "Business_Sector", "Sector"]);
+        const zone = getProperty(p, ["Client Zone", "Client_Zone", "Zone"]);
+        const cv = normalizeClientValue(getProperty(p, ["Client Value", "Client_Value", "Value"]));
+        const imp = parseFloat(p["Sales_Impact_Clean"]) || 0;
+
+        // Check sector filter (multiple selection)
+        if (selectedSectors.size > 0 && !selectedSectors.has(sector)) return false;
+        
+        // Check zone filter (multiple selection)
+        if (selectedZones.size > 0 && !selectedZones.has(zone)) return false;
+        
+        // Check client value filter (multiple selection)
+        if (selectedValues.size > 0 && !selectedValues.has(cv)) return false;
+        
+        // Check sales impact range
+        const minImp = parseFloat(document.getElementById('minImpact').value) || 0;
+        const maxImp = parseFloat(document.getElementById('maxImpact').value) || Infinity;
+        if (imp < minImp || imp > maxImp) return false;
+        
+        return true;
+    });
+
+    geoLayer = L.geoJSON(filteredFeatures, {
+        pointToLayer: (f, latlng) => {
+            const p = f.properties;
+            const sector = getProperty(p, ["Business Sector", "Business_Sector", "Sector"]);
+            const zone = getProperty(p, ["Client Zone", "Client_Zone", "Zone"]);
+            const cv = normalizeClientValue(getProperty(p, ["Client Value", "Client_Value", "Value"]));
+
+            // Determine color based on which filter is active
+            let color = sectorColor(sector);
+            if (selectedZones.size === 1 && selectedZones.has(zone)) color = zoneColor(zone);
+            else if (selectedValues.size === 1 && selectedValues.has(cv)) color = clientValueColor(cv);
+            else if (selectedSectors.size === 1 && selectedSectors.has(sector)) color = sectorColor(sector);
+
+            // SMALLER MARKERS - radius 5
+            return L.circleMarker(latlng, {
+                radius: 5,
+                fillColor: color,
+                color: "#ffffff",
+                weight: 1,
+                fillOpacity: 0.85
+            });
+        },
+        onEachFeature: (f, l) => {
+            const p = f.properties;
+            const name = getProperty(p, ["Nom_du_contact", "Nom du contact", "Nom_de_la_boutique", "Nom de la boutique", "Name", "Nom"]) || "N/A";
+            const typeClient = getProperty(p, ["Type de client", "Type_de_client", "Type", "Client Type"]) || "N/A";
+            const fullAddress = getProperty(p, ["Full Address", "Full_Address", "Address", "Adresse"]) || "N/A";
+            const zone = getProperty(p, ["Client Zone", "Client_Zone", "Zone"]) || "N/A";
+            const sector = getProperty(p, ["Business Sector", "Business_Sector", "Sector"]) || "N/A";
+            const salesImpact = p["Sales_Impact_Clean"] || "0";
+            const clientValue = normalizeClientValue(getProperty(p, ["Client Value", "Client_Value", "Value"]));
+
+            l.bindPopup(`
+                <div style="padding: 8px;">
+                    <h3 style="margin: 0 0 10px 0; color: #3b82f6;">${name}</h3>
+                    <div style="display: grid; gap: 4px; font-size: 13px;">
+                        <div><strong>Type:</strong> ${typeClient}</div>
+                        <div><strong>Address:</strong> ${fullAddress}</div>
+                        <div><strong>Zone:</strong> ${zone}</div>
+                        <div><strong>Sector:</strong> ${sector}</div>
+                        <div><strong>Sales Impact:</strong> <span style="color: #10b981;">${parseFloat(salesImpact).toLocaleString()}€</span></div>
+                        <div><strong>Client Value:</strong> <span style="color: ${clientValueColor(clientValue)};">${clientValue}</span></div>
+                    </div>
+                </div>
+            `);
+        }
+    }).addTo(map);
+
+    if (geoLayer.getLayers().length > 0) {
+        map.fitBounds(geoLayer.getBounds(), { padding: [50, 50] });
+    }
+
+    updateStats({
+        type: "FeatureCollection",
+        features: filteredFeatures
+    });
+}
+
+/* ---------- EXPORT CSV FUNCTION ---------- */
+function exportCSV() {
+    if (!geoData) {
+        alert("No data available to export.");
+        return;
+    }
+    
+    // Get filtered data
+    const filteredFeatures = geoData.features.filter(f => {
+        const p = f.properties;
+        const sector = getProperty(p, ["Business Sector", "Business_Sector", "Sector"]);
+        const zone = getProperty(p, ["Client Zone", "Client_Zone", "Zone"]);
+        const cv = normalizeClientValue(getProperty(p, ["Client Value", "Client_Value", "Value"]));
+        const imp = parseFloat(p["Sales_Impact_Clean"]) || 0;
+
+        // Check sector filter (multiple selection)
+        if (selectedSectors.size > 0 && !selectedSectors.has(sector)) return false;
+        
+        // Check zone filter (multiple selection)
+        if (selectedZones.size > 0 && !selectedZones.has(zone)) return false;
+        
+        // Check client value filter (multiple selection)
+        if (selectedValues.size > 0 && !selectedValues.has(cv)) return false;
+        
+        // Check sales impact range
+        const minImp = parseFloat(document.getElementById('minImpact').value) || 0;
+        const maxImp = parseFloat(document.getElementById('maxImpact').value) || Infinity;
+        if (imp < minImp || imp > maxImp) return false;
+        
+        return true;
+    });
+    
+    if (filteredFeatures.length === 0) {
+        alert("No data to export based on current filters.");
+        return;
+    }
+    
+    // Create CSV content
+    const headers = [
+        "Name",
+        "Type",
+        "Address",
+        "City",
+        "Postal Code",
+        "Country",
+        "Zone",
+        "Sector",
+        "Client Value",
+        "Sales Impact (€)",
+        "Latitude",
+        "Longitude"
+    ];
+    
+    let csvContent = headers.join(",") + "\n";
+    
+    filteredFeatures.forEach(feature => {
+        const p = feature.properties;
+        const geometry = feature.geometry;
+        
+        const name = getProperty(p, ["Nom_du_contact", "Nom du contact", "Nom_de_la_boutique", "Nom de la boutique", "Name", "Nom"]) || "";
+        const typeClient = getProperty(p, ["Type de client", "Type_de_client", "Type", "Client Type"]) || "";
+        const address = getProperty(p, ["Full Address", "Full_Address", "Address", "Adresse"]) || "";
+        const city = p["Ville"] || "";
+        const postalCode = p["Code_postal"] || "";
+        const country = p["Pays"] || "";
+        const zone = getProperty(p, ["Client Zone", "Client_Zone", "Zone"]) || "";
+        const sector = getProperty(p, ["Business Sector", "Business_Sector", "Sector"]) || "";
+        const clientValue = normalizeClientValue(getProperty(p, ["Client Value", "Client_Value", "Value"]));
+        const salesImpact = p["Sales_Impact_Clean"] || "0";
+        const lat = geometry.coordinates[1] || "";
+        const lng = geometry.coordinates[0] || "";
+        
+        const row = [
+            `"${name.replace(/"/g, '""')}"`,
+            `"${typeClient.replace(/"/g, '""')}"`,
+            `"${address.replace(/"/g, '""')}"`,
+            `"${city.replace(/"/g, '""')}"`,
+            `"${postalCode}"`,
+            `"${country.replace(/"/g, '""')}"`,
+            `"${zone.replace(/"/g, '""')}"`,
+            `"${sector.replace(/"/g, '""')}"`,
+            `"${clientValue}"`,
+            salesImpact,
+            lat,
+            lng
+        ];
+        
+        csvContent += row.join(",") + "\n";
+    });
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "client_data_export.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+/* ---------- FILTERS ---------- */
+function applyFilters() {
+    drawMarkers(geoData);
+}
+
+function resetFilters() {
+    // Reset checkboxes
+    selectAll('sector');
+    selectAll('zone');
+    selectAll('value');
+    
+    // Reset impact range
+    document.getElementById('minImpact').value = '';
+    document.getElementById('maxImpact').value = '';
+    
+    // Keep current zoom level when resetting filters
+    drawMarkers(geoData);
+}
+
+/* ---------- LOAD ---------- */
+function load() {
+    fetch("France.geojson")
+        .then(r => r.json())
+        .then(d => {
+            geoData = d;
+
+            const s = new Set(), z = new Set(), cv = new Set();
+            
+            d.features.forEach(f => {
+                const p = f.properties;
+                
+                const sector = getProperty(p, ["Business Sector", "Business_Sector", "Sector"]);
+                const zone = getProperty(p, ["Client Zone", "Client_Zone", "Zone"]);
+                const clientVal = normalizeClientValue(getProperty(p, ["Client Value", "Client_Value", "Value"]));
+                
+                if (sector) s.add(sector);
+                if (zone) z.add(zone);
+                if (clientVal && clientVal !== "N/A") cv.add(clientVal);
+            });
+
+            staticSectors = [...s];
+            staticZones = [...z];
+            staticValues = [...cv];
+
+            // Create checkbox groups
+            createCheckbox('sectorCheckboxes', staticSectors, 'sector');
+            createCheckbox('zoneCheckboxes', staticZones, 'zone');
+            createCheckbox('valueCheckboxes', staticValues, 'value');
+
+            // Update dropdown headers
+            updateDropdownHeader('sector');
+            updateDropdownHeader('zone');
+            updateDropdownHeader('value');
+
+            // Draw initial markers
+            drawMarkers(d);
+        })
+        .catch(error => {
+            console.error("Error loading GeoJSON:", error);
+            alert("Could not load data. Please check if France.geojson exists.");
+        });
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    setupDropdowns();
+    
+    // Add event listeners for impact range
+    document.getElementById('minImpact').addEventListener('input', applyFilters);
+    document.getElementById('maxImpact').addEventListener('input', applyFilters);
+    
+    load();
+});
+</script>
+</body>
+</html>
